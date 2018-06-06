@@ -1,0 +1,123 @@
+@startuml
+
+note as N1
+  <size:26>Application 类的类结构图</size>
+end note
+
+class TC_HandleBaseT <<T>> {
+智能指针基类
+所有需要智能指针支持的类都需要从该对象继承，
+内部采用引用计数TC_Atomic实现，对象可以放在容器中；
+}
+TC_HandleBase --|> TC_HandleBaseT: <TC_Atomic>
+
+class TC_Monitor <<class T, class P>> {
+线程锁监控模板类.通常线程锁，都通过该类来使用
+而不是直接用TC_ThreadMutex、TC_ThreadRecMutex
+该类将TC_ThreadMutex/TC_ThreadRecMutex 与TC_ThreadCond结合起来
+}
+
+TC_ThreadLock --|> TC_Monitor : <TC_ThreadMutex, TC_ThreadCond>
+
+class Application #red {
+服务的基类
+}
+Application --|> BaseNotify
+Communicator --o Application: TC_AutoPtr<Communicator>
+TC_EpollServer --o Application: TC_AutoPtr<TC_EpollServer>
+TC_Config --* Application
+
+class BaseNotify {
+需要接收到管理命令的对象从该类派生
+}
+
+class TC_ThreadRecMutex {
+线程锁类
+采用线程库实现
+}
+
+BaseNotify --|> TC_HandleBase
+BaseNotify --|> TC_ThreadRecMutex
+
+class Communicator {
+通信器,用于创建和维护客户端proxy
+}
+Communicator --|> TC_HandleBase
+Communicator --|> TC_ThreadRecMutex
+ServantProxyFactory --o Communicator: TC_AutoPtr<ServantProxyFactory>
+CommunicatorEpoll --o Communicator: [MAX_CLIENT_THREAD_NUM]
+StatReport --o Communicator
+
+class ServantProxyFactory {
+创建ServantProxy对象
+每个object在进程空间只有一个ServantProxy实例
+}
+ServantProxyFactory --|> TC_HandleBase
+ServantProxyFactory --|> TC_ThreadRecMutex
+Communicator --o ServantProxyFactory
+ServantProxy "n" --* "1" ServantProxyFactory : TC_AutoPtr<ServantProxy>
+
+class ServantProxy {
+远程对象的本地代理
+同名servant在一个通信器中最多只有一个实例
+防止和用户在Tars中定义的函数名冲突，接口以tars_开头
+}
+ServantProxy --|> TC_HandleBase
+ServantProxy --|> TC_ThreadMutex
+Communicator --o ServantProxy
+ObjectProxy "n" --o ServantProxy
+EndpointManagerThread --* ServantProxy
+
+class ObjectProxy {
+每个objectname在每个客户端网络线程中有唯一一个objectproxy
+}
+CommunicatorEpoll --o ObjectProxy
+ProxyProtocol --* ObjectProxy
+CheckTimeoutInfo --* ObjectProxy
+ServantProxyCallback --o ObjectProxy:TC_AutoPtr<ServantProxyCallback>
+SocketOpt "n" --* ObjectProxy
+EndpointManager --* ObjectProxy: std::unique_ptr<EndpointManager>
+ReqMessage --o ObjectProxy: TC_TimeoutQueueNoID<ReqMessage *>
+ServantProxy --o ObjectProxy
+
+class EndpointManagerThread {
+对外获取路由请求的封装类
+}
+Communicator --o EndpointManagerThread
+TC_ThreadLock --* EndpointManagerThread
+EndpointThread "n" --* EndpointManagerThread
+
+class TC_EpollServer {
+Server基类
+注册协议解析器
+注册逻辑处理器
+注册管理端口处理器
+}
+TC_EpollServer --|> TC_ThreadLock
+TC_EpollServer --|> TC_HandleBase
+BindAdapter --o TC_EpollServer
+TC_Socket --* TC_EpollServer
+TC_Slice --* TC_EpollServer: vector<TC_Slice>
+
+class BindAdapter {
+服务端口管理,监听socket信息
+}
+BindAdapter --|> TC_ThreadLock
+BindAdapter --|> TC_HandleBase
+TC_EpollServer --o BindAdapter
+HandleGroup --o BindAdapter:TC_AutoPtr<HandleGroup>
+protocol_functor --* BindAdapter
+header_filter_functor --* BindAdapter
+
+class CommunicatorEpoll {
+客户端网络处理的线程类
+}
+Communicator --o CommunicatorEpoll
+NotifyInfo --* CommunicatorEpoll:[MAX_CLIENT_NOTIFYEVENT_NUM]
+TC_Socket --* CommunicatorEpoll
+TC_Epoller --* CommunicatorEpoll
+ObjectProxyFactory --o CommunicatorEpoll
+AsyncProcThread --* CommunicatorEpoll:[MAX_CLIENT_ASYNCTHREAD_NUM]
+PropertyReport --o CommunicatorEpoll
+
+@enduml
