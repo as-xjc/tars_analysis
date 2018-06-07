@@ -1,0 +1,68 @@
+@startuml
+autonumber
+
+[-> Application: main
+
+Application -> TC_Common:ignorePipe
+Application -> Application:parseConfig
+activate Application
+Application -> TC_CONFIG:parseFile
+TC_CONFIG -> TC_CONFIG:parse
+deactivate Application
+
+Application -> Application:initializeClient
+activate Application
+Application -> CommunicatorFactory:getCommunicator
+CommunicatorFactory -> Communicator: new Communicator(conf)
+activate Communicator
+Communicator -> Communicator: setProperty(conf, domain)
+activate Communicator
+Communicator -> Communicator: initClientConfig
+deactivate Communicator
+deactivate Communicator
+deactivate Application
+
+Application -> Application:initializeServer
+activate Application
+Application -> TC_EpollServer:new TC_EpollServer(NetThreadNum)
+Application -> TC_EpollServer:setNetThreadBufferPoolInfo
+Application -> TC_EpollServer:EnAntiEmptyConnAttack
+Application -> TC_EpollServer:setEmptyConnTimeout
+Application -> AppCache:setCacheInfo
+Application -> Application:setLogInfo\nsetConfigInfo\nsetNotifyInfo\nsetNodeInfo
+Application -> ServantHelperManager:addServant<AdminServant>
+deactivate Application
+
+Application -> Application:bindAdapter
+note left:绑定对象和端口
+activate Application
+Application -> ServantHelperManager:setAdapterServant(adapterName, servant)
+deactivate Application
+
+Application -> Application:initialize
+note left
+业务应用的初始化
+纯虚函数，子类实现
+end note
+
+Application -> Application:outAllAdapter
+Application -> Application:setHandle
+activate Application
+Application -> BindAdapter:setHandle<ServantHandle>()
+activate BindAdapter
+BindAdapter -> TC_EpollServer:setHandleGroup<ServantHandle>()
+deactivate BindAdapter
+deactivate Application
+
+Application -> TC_EpollServer:startHandle
+TC_EpollServer -> ServantHandle:start
+
+Application -> TC_EpollServer:createEpoll
+TC_EpollServer -> NetThread:createEpoll
+
+Application -> TarsRemoteNotify:report("restart")
+Application -> Application:signal
+Application -> TarsRollLogger:sync(false)
+
+
+@enduml

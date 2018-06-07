@@ -1,0 +1,35 @@
+@startuml
+autonumber
+
+[-> NetThread:EPOLLIN
+
+NetThread -> NetThread:processNet
+NetThread -> NetThread:getConnectionPtr
+NetThread -> NetThread:recvBuffer
+NetThread -> Connection:insertRecvQueue
+
+Connection -> BindAdapter:insertRecvQueue
+BindAdapter -> BindAdapter:rbuffer.push
+BindAdapter -> HandleGroup :notify
+HandleGroup -> ServantHandle:notify
+
+ServantHandle -> ServantHandle: handleRequest
+ServantHandle -> BindAdapter: waitForRecvQueue
+ServantHandle -> ServantHandle: handleRecvData
+ServantHandle -> ServantHandle: createCurrent
+ServantHandle -> TarsCurrent: new TarsCurrent
+ServantHandle -> ServantHandle: handleTarsProtocol
+ServantHandle -> Servant: dispatch
+Servant -> Servant: onDispatch
+note left:该函数定义是通过tars文件生成的rpc类里面实现
+
+ServantHandle -> TarsCurrent: sendResponse
+TarsCurrent -> ServantHandle: sendResponse
+ServantHandle -> TC_EpollServer: send
+TC_EpollServer -> NetThread: send
+NetThread -> NetThread: sbuffer.push_back
+NetThread -> NetThread: processPipe
+NetThread -> NetThread: sendBuffer
+NetThread -> Connection: send
+
+@enduml
