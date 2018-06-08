@@ -25,6 +25,7 @@ deactivate Application
 Application -> Application:initializeServer
 activate Application
 Application -> TC_EpollServer:new TC_EpollServer(NetThreadNum)
+note left: 在这里创建网络线程
 Application -> TC_EpollServer:setNetThreadBufferPoolInfo
 Application -> TC_EpollServer:EnAntiEmptyConnAttack
 Application -> TC_EpollServer:setEmptyConnTimeout
@@ -47,6 +48,7 @@ end note
 
 Application -> Application:outAllAdapter
 Application -> Application:setHandle
+note left : 这里将会创建业务线程
 activate Application
 Application -> BindAdapter:setHandle<ServantHandle>()
 activate BindAdapter

@@ -40,7 +40,3 @@ setHandleGroupName(`TestApp.HelloServer.HelloObjAdapte`)
 * `notify`用于设置通知数据包发送和关闭某个连接的事件
 
 `TC_EpollServer`创建的时候，指定内部的线程数（不允许大于15个），用来创建`NetThread`，使用第一个线程负责监听`adapter`，其余线程负责数据的收发
-
-### 数据发送流程
-
-发送数据的包，会携带上行包的对应`fd`数据，首先通过`TC_EpollServer::send`函数发送数据。`TC_EpollServer::send`会根据`fd`找到对应的`NetThread`，然后调用`NetThread`的`send`函数，把数据包插入发送队列，并且通知`notify`。`NetThread`线程的主循环接收到`notify`的信号，执行`processPipe`
