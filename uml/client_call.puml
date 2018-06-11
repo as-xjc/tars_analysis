@@ -14,7 +14,6 @@ ServantProxy -> EndpointManagerThread:new EndpointManagerThread(pCommunicator, (
 deactivate client
 
 [-> client:call Proxy rpc
-activate client
 client -> ProxyProxy:testProxy
 ProxyProxy -> ServantProxy:tars_invoke
 ServantProxy -> ServantProxy:invoke
@@ -22,21 +21,21 @@ ServantProxy -> CommunicatorEpoll:notify
 CommunicatorEpoll -> CommunicatorEpoll:handle
 CommunicatorEpoll -> ObjectProxy:invoke
 ObjectProxy -> EndpointManager:selectAdapterProxy
-EndpointManager -> AdapterProxy:invoke
-AdapterProxy -> AdapterProxy:finishInvoke
-AdapterProxy -> AdapterProxy:doInvoke
+ObjectProxy -> AdapterProxy:invoke
 AdapterProxy -> Transceiver:sendRequest
 Transceiver -> Transceiver:send
 ServantProxy -> ServantProxy:msg->pMonitor->wait()
 note left:等待回包，收到通知后返回给上层生成结果，结束这次rpc调用
+
+[-> CommunicatorEpoll:EPOLLIN
 CommunicatorEpoll -> CommunicatorEpoll:handle
 note left:可读事件触发
 CommunicatorEpoll -> CommunicatorEpoll:handleInputImp
 CommunicatorEpoll -> Transceiver:doResponse
-CommunicatorEpoll -> AdapterProxy:finishInvoke
-AdapterProxy -> AdapterProxy:finishInvoke
+CommunicatorEpoll -> AdapterProxy:finishInvoke(ResponsePacket)
+AdapterProxy -> AdapterProxy:doInvoke
+AdapterProxy -> AdapterProxy:finishInvoke(msg);
 AdapterProxy -> AdapterProxy:msg->pMonitor->notify();
 note left:回包收到，通知ServantProxy处理
-deactivate client
 
 @enduml
