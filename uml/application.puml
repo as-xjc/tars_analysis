@@ -109,6 +109,11 @@ HandleGroup --o BindAdapter:TC_AutoPtr<HandleGroup>
 protocol_functor --* BindAdapter
 header_filter_functor --* BindAdapter
 
+class HandleGroup {
+}
+Handle --* HandleGroup
+BindAdapter --o HandleGroup
+
 class CommunicatorEpoll {
 客户端网络处理的线程类
 }

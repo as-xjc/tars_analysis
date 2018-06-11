@@ -1,0 +1,24 @@
+@startuml
+autonumber
+
+[-> client: init rpc
+activate client
+client -> Communicator:stringToProxy
+Communicator -> Communicator:getServantProxy
+Communicator -> ServantProxyFactory:getServantProxy
+ServantProxyFactory -> Communicator:getCommunicatorEpoll
+ServantProxyFactory -> CommunicatorEpoll:getObjectProxy
+CommunicatorEpoll -> ObjectProxyFactory:getObjectProxy
+ObjectProxyFactory -> ObjectProxyFactory:new ObjectProxy(communicatorEpoll, ObjectProxyName,setName)
+ServantProxyFactory -> ServantProxy:new ServantProxy(comm, ObjectProxy, comm->getClientThreadNum())
+ServantProxy -> EndpointManagerThread:new EndpointManagerThread(pCommunicator, (*_objectProxy)->name())
+deactivate client
+
+[-> client:call Proxy rpc
+activate client
+client -> ProxyProxy:testProxy
+ProxyProxy -> ServantProxy:tars_invoke
+ServantProxy -> ServantProxy:invoke
+deactivate client
+
+@enduml
