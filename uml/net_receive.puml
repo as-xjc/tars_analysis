@@ -8,7 +8,7 @@ NetThread -> NetThread:getConnectionPtr
 NetThread -> NetThread:recvBuffer
 NetThread -> Connection:recv(recv_queue::queue_type)
 Connection -> Connection:parseProtocol
-note left:网络接收到的数据进行协议解析
+note left:网络接收到的数据进行拆分成单独的request
 NetThread -> Connection:insertRecvQueue
 
 Connection -> BindAdapter:insertRecvQueue
