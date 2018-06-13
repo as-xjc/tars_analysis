@@ -6,6 +6,9 @@ autonumber
 NetThread -> NetThread:processNet
 NetThread -> NetThread:getConnectionPtr
 NetThread -> NetThread:recvBuffer
+NetThread -> Connection:recv(recv_queue::queue_type)
+Connection -> Connection:parseProtocol
+note left:网络接收到的数据进行协议解析
 NetThread -> Connection:insertRecvQueue
 
 Connection -> BindAdapter:insertRecvQueue
